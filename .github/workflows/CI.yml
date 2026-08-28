@@ -24,6 +24,8 @@ jobs:
           node-version: 22
       - name: Install
         run: npm ci --ignore-scripts
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
       - name: Validate the AoT compatibility surface
         run: |
           npm run check:fesl
@@ -31,6 +33,20 @@ jobs:
           node --check ea_capture.js
           node --check ea_selftest.js
           npm run lint:alpha
+          npm run prettier-check
+          npx prettier --check clear_aot_sessions.js ea_capture.js ea_fesl.js ea_selftest.js
+      - name: Exercise the loopback FESL login handshake
+        run: |
+          export AOT_FESL_PORTS=28131
+          export AOT_FESL_SELFTEST_PORT=28131
+          export AOT_FESL_LOG="$RUNNER_TEMP/aot-fesl.log"
+          node ea_fesl.js > "$RUNNER_TEMP/aot-fesl.stdout" 2>&1 &
+          fesl_pid=$!
+          trap 'kill "$fesl_pid" 2>/dev/null || true' EXIT
+          sleep 1
+          node ea_selftest.js | tee "$RUNNER_TEMP/aot-fesl-selftest.stdout"
+          grep -q 'TXN=Hello' "$RUNNER_TEMP/aot-fesl-selftest.stdout"
+          grep -q 'TXN=NuXBL360Login' "$RUNNER_TEMP/aot-fesl-selftest.stdout"
       - name: Test
         run: npm test
       - name: Build

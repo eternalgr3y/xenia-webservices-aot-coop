@@ -37,6 +37,9 @@ This source alpha is not hardened for internet deployment. Review the current
 dependency audit and application threat model before enabling any non-loopback
 listener; the explicit opt-in flags are safeguards, not a security guarantee.
 
+The matching launcher, setup checks, and exact component pins live in
+[aot-40th-day-same-pc-coop](https://github.com/eternalgr3y/aot-40th-day-same-pc-coop).
+
 Players must provide their own legally obtained game dump. This repository
 contains no game executable, game assets, console keys, EA credentials, or EA
 server source code. The compatibility work is independent and is not
@@ -57,29 +60,35 @@ This project uses [NestJS](https://nestjs.com/) a Node.js framework using Typesc
 
 1. Install [NodeJS](https://nodejs.org/).
 
-2. Install MongoDB Compass, details below.
+2. Install MongoDB Community Server locally, details below. Compass is
+   optional.
 
 3. Copy the provided [.env.template](/.env.template) and rename it to `.env`.
 
 4. Configure the `.env` file if needed.
 
-5. Run [setup.bat](/setup.bat) script to automatically install and build the project.
+5. Install from the committed lockfile with `npm ci`, then build with
+   `npm run build`.
 
-6. Check the server is running by accessing the frontend at http://127.0.0.1:36000/.
+6. Start it through the matching AoT launcher, or use `npm start` for isolated
+   backend development, and verify the frontend only at
+   http://127.0.0.1:36000/.
 
-### MongoDB Compass
+### MongoDB
 
-Install [MongoDB Community Server](https://www.mongodb.com/try/download/community) to manage your database ([tutorial](https://www.youtube.com/watch?v=gDOKSgqM-bQ)).
+Install [MongoDB Community Server](https://www.mongodb.com/try/download/community)
+as a local Windows service and keep it bound to loopback. MongoDB Compass may
+be used as a local management UI, but it is not required by the service.
 
-If you plan to create a local database using MongoDB Compass it must be installed as a **network service** or use [MongoDB Atlas](https://www.mongodb.com/atlas/database) a cloud database for free.
+Do not point this alpha at MongoDB Atlas or another remote database. The
+supported same-PC configuration is a loopback-only XWS listener and a
+loopback-only MongoDB listener.
 
-## Hosting Services
+## Deployment boundary
 
-**Heroku**\
-You can easily setup and host this REST API on [Heroku](https://www.heroku.com/), however they do not offer a free tier.
-
-**Vercel**\
-[Vercel](https://vercel.com/) is another option and it offers a free tier. However, i don't know how easy it will be to setup and configure.
+The AoT compatibility fork is supported only as a local loopback service. The
+upstream project's public-hosting suggestions do not apply to this alpha. Do
+not expose its HTTP, FESL, Theater, or MongoDB listeners to the internet.
 
 ## Adding Title Support
 

@@ -1,6 +1,17 @@
 // Drives the FESL responder through Hello -> (MemCheck) -> NuXBL360Login and
 // prints every server->client packet, to verify the login handler before AoT runs.
 const net = require('net');
+const selfTestPort = Number.parseInt(
+  process.env.AOT_FESL_SELFTEST_PORT || '18131',
+  10,
+);
+if (
+  !Number.isInteger(selfTestPort) ||
+  selfTestPort < 1 ||
+  selfTestPort > 65535
+) {
+  throw new Error('AOT_FESL_SELFTEST_PORT must be a valid TCP port');
+}
 const build = (c, t, n, p) => {
   const pb = Buffer.from(p, 'latin1');
   const h = Buffer.alloc(12);
@@ -9,7 +20,7 @@ const build = (c, t, n, p) => {
   h.writeUInt32BE(pb.length + 12, 8);
   return Buffer.concat([h, pb]);
 };
-const s = net.connect(18131, '127.0.0.1', () => {
+const s = net.connect(selfTestPort, '127.0.0.1', () => {
   s.write(
     build(
       'fsys',
@@ -20,6 +31,7 @@ const s = net.connect(18131, '127.0.0.1', () => {
   );
 });
 let sentLogin = false;
+let observedLoginReply = false;
 s.on('data', (d) => {
   let off = 0;
   while (off + 12 <= d.length) {
@@ -31,6 +43,7 @@ s.on('data', (d) => {
       .replace(/\0/g, '')
       .replace(/\n/g, ' | ');
     console.log(`<= [${comp}] ${pl}`);
+    if (pl.includes('TXN=NuXBL360Login')) observedLoginReply = true;
     off += size;
   }
   if (!sentLogin) {
@@ -48,5 +61,8 @@ s.on('data', (d) => {
     }, 150);
   }
 });
-s.on('error', (e) => console.log('ERR ' + e.message));
-setTimeout(() => process.exit(0), 1500);
+s.on('error', (e) => {
+  console.error('ERR ' + e.message);
+  process.exitCode = 1;
+});
+setTimeout(() => process.exit(observedLoginReply ? 0 : 1), 1500);
