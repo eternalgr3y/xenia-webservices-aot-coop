@@ -32,6 +32,7 @@ interface CreateProps {
   hostAddress: IpAddress;
   macAddress: MacAddress;
   machineId: Xuid;
+  port?: number;
 }
 
 export default class Player {
@@ -54,7 +55,7 @@ export default class Player {
   public static create(props: CreateProps) {
     return new Player({
       ...props,
-      port: 36000, // Port hard-coded?
+      port: props.port ?? 36000,
       state: new StateFlag(
         StateFlags.ONLINE | StateFlags.JOINABLE | StateFlags.PLAYING,
       ),

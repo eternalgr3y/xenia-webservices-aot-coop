@@ -12,5 +12,7 @@ export class CreatePlayerRequest {
   @ApiProperty()
   macAddress: string;
   @ApiProperty()
+  port?: number;
+  @ApiProperty()
   settings: Map<string, Array<string>>;
 }

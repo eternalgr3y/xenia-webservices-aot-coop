@@ -3,6 +3,7 @@ import {
   Post,
   Body,
   NotFoundException,
+  BadRequestException,
   ConsoleLogger,
   Get,
 } from '@nestjs/common';
@@ -83,6 +84,7 @@ export class PlayerController {
         new MacAddress(request.macAddress),
         request.gamertag ? new Gamertag(request.gamertag) : undefined,
         request.settings ? user_settings : undefined,
+        request.port,
       ),
     );
 
@@ -95,9 +97,23 @@ export class PlayerController {
   ): Promise<PlayerResponse> {
     // this.logger.verbose('\n' + JSON.stringify(request, null, 2));
 
-    const player = await this.queryBus.execute(
-      new FindPlayerQuery(new IpAddress(request.hostAddress)),
-    );
+    let query: FindPlayerQuery;
+    if (request.xuid) {
+      query = new FindPlayerQuery(undefined, undefined, new Xuid(request.xuid));
+    } else if (request.macAddress) {
+      query = new FindPlayerQuery(
+        undefined,
+        new MacAddress(request.macAddress),
+      );
+    } else if (request.hostAddress) {
+      query = new FindPlayerQuery(new IpAddress(request.hostAddress));
+    } else {
+      throw new BadRequestException(
+        'One of xuid, macAddress, or hostAddress is required.',
+      );
+    }
+
+    const player = await this.queryBus.execute(query);
 
     if (!player) {
       throw new NotFoundException('Player not found.');

@@ -1,6 +1,6 @@
 import { ICommandHandler, CommandHandler } from '@nestjs/cqrs';
 import { ProcessClientAddressCommand } from '../commands/ProcessClientAddressCommand';
-import ipaddr from 'ipaddr.js';
+import * as ipaddr from 'ipaddr.js';
 import { ConsoleLogger } from '@nestjs/common';
 
 @CommandHandler(ProcessClientAddressCommand)

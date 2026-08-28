@@ -4,7 +4,7 @@ import * as request from 'supertest';
 import { App } from 'supertest/types';
 import { XeniaModule } from './../src/xenia.module';
 
-describe('AppController (e2e)', () => {
+describe('Application startup and address middleware (e2e)', () => {
   let app: INestApplication<App>;
 
   beforeEach(async () => {
@@ -16,10 +16,14 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/whoami (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/whoami')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ address: '127.0.0.1' });
   });
 });

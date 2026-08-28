@@ -23,7 +23,14 @@ jobs:
         with:
           node-version: 22
       - name: Install
-        run: npm install
+        run: npm ci --ignore-scripts
+      - name: Validate the AoT compatibility surface
+        run: |
+          npm run check:fesl
+          node --check clear_aot_sessions.js
+          node --check ea_capture.js
+          node --check ea_selftest.js
+          npm run lint:alpha
       - name: Test
         run: npm test
       - name: Build

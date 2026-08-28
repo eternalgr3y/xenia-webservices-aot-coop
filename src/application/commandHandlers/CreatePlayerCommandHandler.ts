@@ -30,6 +30,7 @@ export class CreatePlayerCommandHandler implements ICommandHandler<CreatePlayerC
         macAddress: command.macAddress,
         machineId: command.machineId,
         settings: command.settings,
+        port: command.port,
       }),
     );
   }

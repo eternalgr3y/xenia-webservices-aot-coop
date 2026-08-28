@@ -9,6 +9,7 @@ import { PlayerDocument } from '../models/PlayerSchema';
 import Xuid from 'src/domain/value-objects/Xuid';
 import IpAddress from 'src/domain/value-objects/IpAddress';
 import Gamertag from 'src/domain/value-objects/Gamertag';
+import MacAddress from 'src/domain/value-objects/MacAddress';
 
 @Injectable()
 export default class PlayerRepository implements IPlayerRepository {
@@ -72,6 +73,22 @@ export default class PlayerRepository implements IPlayerRepository {
   public async findByAddress(ip: IpAddress): Promise<Player> {
     const player = await this.PlayerModel.findOne({
       hostAddress: ip.value,
+    });
+
+    if (!player) {
+      return undefined;
+    }
+
+    return this.playerDomainMapper.mapToDomainModel(player);
+  }
+
+  public async findByMac(mac: MacAddress): Promise<Player> {
+    if (!mac) {
+      return undefined;
+    }
+
+    const player = await this.PlayerModel.findOne({
+      macAddress: mac.value,
     });
 
     if (!player) {

@@ -93,6 +93,10 @@ export class SessionController {
         player = await this.queryBus.execute(
           new GetPlayerQuery(new Xuid(request.xuid)),
         );
+      } else if (request.macAddress) {
+        player = await this.queryBus.execute(
+          new FindPlayerQuery(undefined, new MacAddress(request.macAddress)),
+        );
       } else {
         // Fallback for backwards compatibility older netplay builds don't provide xuid.
         player = await this.queryBus.execute(
@@ -178,9 +182,40 @@ export class SessionController {
     @Param('titleId') titleId: string,
     @Param('sessionId') sessionId: string,
   ) {
-    const session: Session = await this.queryBus.execute(
+    let session: Session = await this.queryBus.execute(
       new GetSessionQuery(new TitleId(titleId), new SessionId(sessionId)),
     );
+
+    // [AOT-DIAG] Army of Two: The 40th Day joiner searches XSessionSearchByID
+    // with a bogus id (0x7f, derived from the host's 127.x synthetic-loopback
+    // IP) and 404s, then self-hosts. As a DIAGNOSTIC, on a miss for this title
+    // return the title's advertised host session so we can observe whether the
+    // joiner then takes the JOIN branch instead of hosting. Remove after testing.
+    if (!session && titleId === '454108D8') {
+      const hosts: Session[] = await this.queryBus.execute(
+        new GetTitleSessionsQuery(new TitleId(titleId)),
+      );
+      if (hosts && hosts.length) {
+        const candidates = hosts
+          .map((h) => `${h.id?.value}@${h.hostAddress?.value}`)
+          .join(', ');
+        // Return the oldest advertised host, which registers first in the
+        // intended flow, never the newest. The joiner creates its own
+        // self-host session a beat later, so its session is the newest; returning
+        // hosts[last] would hand the joiner back its own session, causing a
+        // self-join. Oldest-first is robust when the host is registered before
+        // the joiner searches; launch orchestration enforces that ordering.
+        // Mongo natural/_id order is creation-ascending, so hosts[0] = oldest.
+        session = hosts[0];
+        this.logger.warn(
+          `[AOT-DIAG] getSession ${sessionId} MISS -> ${hosts.length} host(s) [${candidates}] -> returning OLDEST ${session.id?.value}@${session.hostAddress?.value}`,
+        );
+      } else {
+        this.logger.warn(
+          `[AOT-DIAG] getSession ${sessionId} MISS -> 0 advertised host sessions (clear stale? host not up yet?)`,
+        );
+      }
+    }
 
     if (!session) {
       throw new NotFoundException(`Session ${sessionId} was not found.`);

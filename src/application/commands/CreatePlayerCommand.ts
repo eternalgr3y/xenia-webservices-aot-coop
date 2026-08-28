@@ -12,5 +12,6 @@ export class CreatePlayerCommand {
     public readonly macAddress: MacAddress,
     public readonly gamertag?: Gamertag,
     public readonly settings?: Map<string, Array<UserSetting>>,
+    public readonly port?: number,
   ) {}
 }

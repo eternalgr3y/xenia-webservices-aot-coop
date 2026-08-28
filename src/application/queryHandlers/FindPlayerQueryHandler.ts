@@ -13,6 +13,12 @@ export class FindPlayerQueryHandler implements IQueryHandler<FindPlayerQuery> {
   ) {}
 
   async execute(query: FindPlayerQuery) {
+    if (query.xuid) {
+      return this.repository.findByXuid(query.xuid);
+    }
+    if (query.macAddress) {
+      return this.repository.findByMac(query.macAddress);
+    }
     return this.repository.findByAddress(query.hostAddress);
   }
 }
